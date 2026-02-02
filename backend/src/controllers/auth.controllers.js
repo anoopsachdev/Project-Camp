@@ -15,6 +15,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
   } catch (error) {
+    console.error("Error in generateAccessAndRefreshTokens:", error);
     throw new ApiError(500, "Something went wrong in generating access token");
   }
 };
@@ -104,9 +105,9 @@ const login = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production", // CRITICAL: strictly safe cookies (true) block login on localhost (HTTP). Keep this dynamic.
   };
- 
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
@@ -228,7 +229,7 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+    req.cookies?.refreshToken || req.body.refreshToken;
   if (!incomingRefreshToken) {
     throw new ApiError(401, "Unauthorized access");
   }
