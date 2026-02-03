@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { LayoutDashboard, Folder, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Folder, LogOut, User, Settings } from "lucide-react";
 import { cn } from "./ui/Button";
 
 const Layout = () => {
@@ -10,7 +10,7 @@ const Layout = () => {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-    // { icon: Folder, label: 'Projects', path: '/' },
+    { icon: Settings, label: "Settings", path: "/settings" },
   ];
 
   return (

@@ -14,8 +14,14 @@ import Layout from "./components/Layout";
 // Lazy load pages
 const LoginPage = React.lazy(() => import("./pages/auth/LoginPage"));
 const RegisterPage = React.lazy(() => import("./pages/auth/RegisterPage"));
+const ForgotPassword = React.lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = React.lazy(() => import("./pages/auth/ResetPassword"));
+const EmailVerification = React.lazy(
+  () => import("./pages/auth/EmailVerification"),
+);
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const ProjectView = React.lazy(() => import("./pages/ProjectView"));
+const UserSettings = React.lazy(() => import("./pages/UserSettings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,11 +84,23 @@ function App() {
                 <Route path="/register" element={<RegisterPage />} />
               </Route>
 
+              {/* Auth Routes (accessible without login) */}
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route
+                path="/reset-password/:resetToken"
+                element={<ResetPassword />}
+              />
+              <Route
+                path="/verify-email/:verificationToken"
+                element={<EmailVerification />}
+              />
+
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/project/:projectId" element={<ProjectView />} />
+                  <Route path="/settings" element={<UserSettings />} />
                   {/* Add more protected routes here */}
                 </Route>
               </Route>

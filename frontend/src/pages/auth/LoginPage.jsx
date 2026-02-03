@@ -86,6 +86,15 @@ const LoginPage = () => {
           </form>
 
           <div className="mt-4 text-center text-sm">
+            <Link
+              to="/forgot-password"
+              className="text-blue-600 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          <div className="mt-4 text-center text-sm">
             <span className="text-gray-500">Don't have an account? </span>
             <Link
               to="/register"

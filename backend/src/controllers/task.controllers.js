@@ -15,9 +15,56 @@ const getTasks = asyncHandler(async (req, res) => {
   if (!project) {
     throw new ApiError(404, "Project not found");
   }
-  const tasks = await Task.find({
-    project: new mongoose.Types.ObjectId(projectId),
-  }).populate("assignedTo", "avatar username fullName");
+
+  const tasks = await Task.aggregate([
+    {
+      $match: {
+        project: new mongoose.Types.ObjectId(projectId),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "assignedTo",
+        foreignField: "_id",
+        as: "assignedTo",
+        pipeline: [
+          {
+            $project: {
+              _id: 1,
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: "subtasks",
+        localField: "_id",
+        foreignField: "task",
+        as: "subTasks",
+        pipeline: [
+          {
+            $project: {
+              _id: 1,
+              title: 1,
+              isCompleted: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        assignedTo: {
+          $arrayElemAt: ["$assignedTo", 0],
+        },
+      },
+    },
+  ]);
 
   return res
     .status(200)
@@ -84,10 +131,12 @@ const getTaskById = asyncHandler(async (req, res) => {
         as: "assignedTo",
         pipeline: [
           {
-            _id: 1,
-            username: 1,
-            fullName: 1,
-            avatar: 1,
+            $project: {
+              _id: 1,
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
           },
         ],
       },
@@ -97,7 +146,7 @@ const getTaskById = asyncHandler(async (req, res) => {
         from: "subtasks",
         localField: "_id",
         foreignField: "task",
-        as: "subtasks",
+        as: "subTasks",
         pipeline: [
           {
             $lookup: {
