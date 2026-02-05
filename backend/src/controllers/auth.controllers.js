@@ -2,7 +2,11 @@ import { User } from "../models/user.models.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import { emailVerificationMailgenContent, sendEmail } from "../utils/mails.js";
+import {
+  emailVerificationMailgenContent,
+  forgotPasswordMailgenContent,
+  sendEmail,
+} from "../utils/mails.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
@@ -300,7 +304,13 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .ApiResponse(200, {}, "Password reset mail has been sent on your mail id");
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        "Password reset mail has been sent on your mail id",
+      ),
+    );
 });
 
 const resetForgotPassword = asyncHandler(async (req, res) => {

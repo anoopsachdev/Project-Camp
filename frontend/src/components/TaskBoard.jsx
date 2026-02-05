@@ -6,7 +6,8 @@ import api from "../api/axios";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/Card";
 import TaskDetailsModal from "./modals/TaskDetailsModal";
 import { toast } from "sonner";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Clock } from "lucide-react";
+import Avatar from "react-avatar";
 
 const TaskBoard = ({ projectId: propProjectId }) => {
   const { projectId: paramProjectId } = useParams();
@@ -30,13 +31,34 @@ const TaskBoard = ({ projectId: propProjectId }) => {
   const updateTaskStatusMutation = useMutation({
     mutationFn: ({ taskId, status }) =>
       api.put(`/tasks/${projectId}/t/${taskId}`, { status }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["tasks", projectId]);
-      toast.success("Task status updated");
+    onMutate: async ({ taskId, status }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries(["tasks", projectId]);
+
+      // Snapshot previous value
+      const previousTasks = queryClient.getQueryData(["tasks", projectId]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["tasks", projectId], (old) => {
+        return old?.map((task) =>
+          task._id === taskId ? { ...task, status } : task,
+        );
+      });
+
+      // Return context with previous value
+      return { previousTasks };
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Revert to previous value on error
+      queryClient.setQueryData(["tasks", projectId], context.previousTasks);
       toast.error(error.response?.data?.message || "Failed to update task");
-      queryClient.invalidateQueries(["tasks", projectId]); // Revert optimistic update
+    },
+    onSuccess: () => {
+      toast.success("Task updated");
+    },
+    onSettled: () => {
+      // Always refetch after error or success to sync with server
+      queryClient.invalidateQueries(["tasks", projectId]);
     },
   });
 
@@ -168,11 +190,16 @@ const TaskBoard = ({ projectId: propProjectId }) => {
                                 {/* Assignee */}
                                 <div className="flex justify-between items-center">
                                   {task.assignedTo ? (
-                                    <div className="flex items-center gap-1">
-                                      <div className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] text-blue-600 font-bold">
-                                        {task.assignedTo.fullName?.[0] ||
-                                          task.assignedTo.username?.[0]}
-                                      </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <Avatar
+                                        name={
+                                          task.assignedTo.fullName ||
+                                          task.assignedTo.username
+                                        }
+                                        size="20"
+                                        round={true}
+                                        textSizeRatio={2}
+                                      />
                                       <span className="text-xs text-gray-600">
                                         {task.assignedTo.username}
                                       </span>

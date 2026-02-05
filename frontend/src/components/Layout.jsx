@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { LayoutDashboard, Folder, LogOut, User, Settings } from "lucide-react";
 import { cn } from "./ui/Button";
+import Avatar from "react-avatar";
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -50,9 +51,12 @@ const Layout = () => {
 
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-              {user?.fullName?.[0] || user?.username?.[0] || "U"}
-            </div>
+            <Avatar
+              name={user?.fullName || user?.username || "User"}
+              size="32"
+              round={true}
+              textSizeRatio={1.75}
+            />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
                 {user?.fullName || user?.username}

@@ -22,8 +22,14 @@ api.interceptors.response.use(
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
 
-        // Only redirect if we are not already on the login or register page
-        const publicPaths = ["/login", "/register"];
+        // Only redirect if we are not already on a public page
+        const publicPaths = [
+          "/login",
+          "/register",
+          "/forgot-password",
+          "/reset-password",
+          "/verify-email",
+        ];
         if (
           !publicPaths.some((path) => window.location.pathname.startsWith(path))
         ) {

@@ -22,6 +22,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
   const [status, setStatus] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [file, setFile] = useState(null);
   const queryClient = useQueryClient();
 
   // Fetch full task details with subtasks
@@ -56,6 +57,8 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
       setDescription(task.description || "");
       setStatus(task.status || "todo");
       setAssignedTo(task.assignedTo?._id || "");
+      setIsEditing(false); // Ensure view mode by default
+      setFile(null);
     }
   }, [task, isOpen]);
 
@@ -77,6 +80,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
       queryClient.invalidateQueries(["task", projectId, task._id]);
       toast.success("Task updated successfully");
       setIsEditing(false);
+      setFile(null);
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Failed to update task");
@@ -135,12 +139,43 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
     },
   });
 
+  // Delete Attachment Mutation
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: (attachmentId) =>
+      api.delete(
+        `/tasks/${projectId}/t/${task._id}/attachments/${attachmentId}`,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["task", projectId, task._id]);
+      toast.success("Attachment deleted");
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to delete attachment",
+      );
+    },
+  });
+
   const handleSave = () => {
-    const updateData = { title, description, status };
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("status", status);
     if (assignedTo) {
-      updateData.assignedTo = assignedTo;
+      formData.append("assignedTo", assignedTo);
     }
-    updateTaskMutation.mutate(updateData);
+    if (file) {
+      formData.append("attachment", file);
+    }
+
+    // Pass formData directly - axios/api wrapper usually handles content-type for FormData automatically
+    // But if our api wrapper expects object for json, checks needed.
+    // Assuming api wrapper handles standard axios behavior.
+
+    // For updateTaskMutation, we need to adapt if it expects data object vs FormData.
+    // The previous implementation used api.put(..., data). Axios handles FormData automatically.
+
+    updateTaskMutation.mutate(formData);
   };
 
   const handleDelete = () => {
@@ -281,6 +316,90 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
                   </select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="attachment">Add Attachment</Label>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 text-sm">
+                      <Paperclip className="h-4 w-4 text-gray-500" />
+                      <span className="text-gray-600">Choose file</span>
+                      <input
+                        id="attachment"
+                        type="file"
+                        onChange={(e) => setFile(e.target.files[0])}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  {file && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center justify-between text-sm bg-gray-50 px-2 py-1 rounded">
+                        <span className="truncate">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setFile(null)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Attachments in Edit Mode */}
+                {taskDetails?.attachments?.length > 0 && (
+                  <div>
+                    <Label className="mb-2 block">Attachments</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {taskDetails.attachments.map((file, idx) => {
+                        // Handle old attachments with "undefined" prefix
+                        let cleanUrl = file.url;
+                        if (cleanUrl?.startsWith("undefined/")) {
+                          cleanUrl = cleanUrl.replace("undefined/", "/");
+                        }
+
+                        // Prepend backend base URL if path is relative
+                        const fileUrl = cleanUrl?.startsWith("http")
+                          ? cleanUrl
+                          : `http://localhost:8000${cleanUrl}`;
+
+                        // Display name: use originalName if available, otherwise extract from URL
+                        const displayName =
+                          file.originalName ||
+                          file.url?.split("/").pop() ||
+                          `Attachment ${idx + 1}`;
+
+                        return (
+                          <div
+                            key={file._id || idx}
+                            className="flex items-center gap-1 bg-blue-50 rounded overflow-hidden"
+                          >
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline px-2 py-1"
+                            >
+                              {displayName}
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                deleteAttachmentMutation.mutate(file._id)
+                              }
+                              disabled={deleteAttachmentMutation.isPending}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-100 p-1 transition-colors"
+                              title="Delete attachment"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex justify-end gap-3 pt-4">
                   <Button variant="outline" onClick={() => setIsEditing(false)}>
                     Cancel
@@ -341,17 +460,53 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
                     <Paperclip className="h-4 w-4" /> Attachments
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {taskDetails.attachments.map((file, idx) => (
-                      <a
-                        key={idx}
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline bg-blue-50 px-2 py-1 rounded"
-                      >
-                        {file.url?.split("/").pop() || `Attachment ${idx + 1}`}
-                      </a>
-                    ))}
+                    {taskDetails.attachments.map((file, idx) => {
+                      // Handle old attachments with "undefined" prefix
+                      let cleanUrl = file.url;
+                      if (cleanUrl?.startsWith("undefined/")) {
+                        cleanUrl = cleanUrl.replace("undefined/", "/");
+                      }
+
+                      // Prepend backend base URL if path is relative
+                      const fileUrl = cleanUrl?.startsWith("http")
+                        ? cleanUrl
+                        : `http://localhost:8000${cleanUrl}`;
+
+                      // Display name: use originalName if available, otherwise extract from URL
+                      const displayName =
+                        file.originalName ||
+                        file.url?.split("/").pop() ||
+                        `Attachment ${idx + 1}`;
+
+                      return (
+                        <div
+                          key={file._id || idx}
+                          className="flex items-center gap-1 bg-blue-50 rounded overflow-hidden"
+                        >
+                          <a
+                            href={fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:underline px-2 py-1"
+                          >
+                            {displayName}
+                          </a>
+                          {isEditing && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                deleteAttachmentMutation.mutate(file._id)
+                              }
+                              disabled={deleteAttachmentMutation.isPending}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-100 p-1 transition-colors"
+                              title="Delete attachment"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

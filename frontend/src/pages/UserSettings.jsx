@@ -11,6 +11,7 @@ import {
 } from "../components/ui/Card";
 import api from "../api/axios";
 import { toast } from "sonner";
+import Avatar from "react-avatar";
 
 const UserSettings = () => {
   const { user } = useAuth();
@@ -59,6 +60,17 @@ const UserSettings = () => {
             <CardTitle>Profile Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex items-center gap-4 mb-4">
+              <Avatar
+                name={user?.fullName || user?.username || "User"}
+                size="80"
+                round={true}
+                textSizeRatio={1.75}
+              />
+              <div>
+                <p className="text-sm text-gray-500">Profile Avatar</p>
+              </div>
+            </div>
             <div>
               <Label>Full Name</Label>
               <p className="text-gray-900 font-medium mt-1">

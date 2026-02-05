@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createSubTask,
   createTask,
+  deleteAttachment,
   deleteSubTask,
   deleteTask,
   getTaskById,
@@ -61,6 +62,7 @@ router
       UserRolesEnum.ADMIN,
       UserRolesEnum.PROJECT_ADMIN,
     ]),
+    upload.single("attachment"),
     mongoIdPathVariableValidator("taskId"),
     updateTaskValidator(),
     validate,
@@ -74,6 +76,17 @@ router
     mongoIdPathVariableValidator("taskId"),
     validate,
     deleteTask,
+  );
+
+// Attachment deletion route - permission check done in controller
+router
+  .route("/:projectId/t/:taskId/attachments/:attachmentId")
+  .delete(
+    validateProjectPermission(AvailableUserRole),
+    mongoIdPathVariableValidator("taskId"),
+    mongoIdPathVariableValidator("attachmentId"),
+    validate,
+    deleteAttachment,
   );
 
 router

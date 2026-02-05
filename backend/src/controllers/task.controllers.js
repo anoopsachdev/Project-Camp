@@ -7,6 +7,8 @@ import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import mongoose from "mongoose";
+import fs from "fs";
+import path from "path";
 import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
 
 const getTasks = asyncHandler(async (req, res) => {
@@ -82,7 +84,8 @@ const createTask = asyncHandler(async (req, res) => {
 
   const attachments = files.map((file) => {
     return {
-      url: `${process.env.SERVER_URL}/images/${file.originalname}`,
+      url: `/images/${file.filename}`,
+      originalName: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
     };
@@ -212,9 +215,8 @@ const updateTask = asyncHandler(async (req, res) => {
     }
   }
 
-  const updatedTask = await Task.findByIdAndUpdate(
-    taskId,
-    {
+  const updatePayload = {
+    $set: {
       title,
       description,
       status,
@@ -222,8 +224,21 @@ const updateTask = asyncHandler(async (req, res) => {
         ? new mongoose.Types.ObjectId(assignedTo)
         : task.assignedTo,
     },
-    { new: true },
-  );
+  };
+
+  if (req.file) {
+    const attachment = {
+      url: `/images/${req.file.filename}`,
+      originalName: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    };
+    updatePayload.$push = { attachments: attachment };
+  }
+
+  const updatedTask = await Task.findByIdAndUpdate(taskId, updatePayload, {
+    new: true,
+  });
 
   return res
     .status(200)
@@ -299,9 +314,72 @@ const deleteSubTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, subtask, "Subtask deleted successfully"));
 });
 
+const deleteAttachment = asyncHandler(async (req, res) => {
+  const { projectId, taskId, attachmentId } = req.params;
+
+  // Find the task
+  const task = await Task.findById(taskId);
+  if (!task) {
+    throw new ApiError(404, "Task not found");
+  }
+
+  // Check if task belongs to the project
+  if (task.project.toString() !== projectId) {
+    throw new ApiError(400, "Task does not belong to this project");
+  }
+
+  // Check user's role in the project
+  const membership = await ProjectMember.findOne({
+    project: new mongoose.Types.ObjectId(projectId),
+    user: new mongoose.Types.ObjectId(req.user._id),
+  });
+
+  if (!membership) {
+    throw new ApiError(403, "You are not a member of this project");
+  }
+
+  // Permission check: admin, project admin, or task creator can delete
+  const isAdmin = membership.role === UserRolesEnum.ADMIN;
+  const isProjectAdmin = membership.role === UserRolesEnum.PROJECT_ADMIN;
+  const isTaskCreator = task.assignedBy.toString() === req.user._id.toString();
+
+  if (!isAdmin && !isProjectAdmin && !isTaskCreator) {
+    throw new ApiError(
+      403,
+      "You don't have permission to delete attachments on this task",
+    );
+  }
+
+  // Find the attachment
+  const attachment = task.attachments.id(attachmentId);
+  if (!attachment) {
+    throw new ApiError(404, "Attachment not found");
+  }
+
+  // Try to delete file from disk
+  try {
+    const filePath = path.join(process.cwd(), "public", attachment.url);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (error) {
+    console.error("Error deleting file from disk:", error);
+    // Continue even if file deletion fails
+  }
+
+  // Remove attachment from task
+  task.attachments.pull(attachmentId);
+  await task.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, task, "Attachment deleted successfully"));
+});
+
 export {
   createSubTask,
   createTask,
+  deleteAttachment,
   deleteTask,
   deleteSubTask,
   getTaskById,

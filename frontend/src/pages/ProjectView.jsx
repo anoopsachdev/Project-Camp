@@ -13,6 +13,7 @@ import { Plus, Edit2, Trash2, UserMinus, ShieldCheck } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import TaskBoard from "../components/TaskBoard";
 import NotesList from "../components/NotesList";
+import Avatar from "react-avatar";
 
 import CreateTaskModal from "../components/modals/CreateTaskModal";
 import CreateNoteModal from "../components/modals/CreateNoteModal";
@@ -243,9 +244,12 @@ const ProjectView = () => {
                     className="flex items-center justify-between gap-3 p-4 bg-white rounded-lg border border-gray-200"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold flex-shrink-0">
-                        {member.user.fullName?.[0] || member.user.username?.[0]}
-                      </div>
+                      <Avatar
+                        name={member.user.fullName || member.user.username}
+                        size="40"
+                        round={true}
+                        textSizeRatio={1.75}
+                      />
                       <div>
                         <p className="text-sm font-medium text-gray-900">
                           {member.user.fullName || member.user.username}
