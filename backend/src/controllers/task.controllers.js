@@ -10,6 +10,11 @@ import mongoose from "mongoose";
 import fs from "fs";
 import path from "path";
 import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  getPublicIdFromUrl,
+} from "../config/cloudinary.js";
 
 const getTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
@@ -82,14 +87,28 @@ const createTask = asyncHandler(async (req, res) => {
   }
   const files = req.files || [];
 
-  const attachments = files.map((file) => {
-    return {
-      url: `/images/${file.filename}`,
-      originalName: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-    };
-  });
+  // Upload files to Cloudinary
+  const attachments = await Promise.all(
+    files.map(async (file) => {
+      try {
+        const result = await uploadToCloudinary(
+          file.buffer,
+          file.originalname,
+          "project-camp/attachments",
+        );
+        return {
+          url: result.secure_url,
+          publicId: result.public_id,
+          originalName: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+        };
+      } catch (error) {
+        console.error("Cloudinary upload error:", error);
+        throw new ApiError(500, "Failed to upload attachment");
+      }
+    }),
+  );
 
   if (assignedTo) {
     const isMember = await ProjectMember.findOne({
@@ -227,13 +246,24 @@ const updateTask = asyncHandler(async (req, res) => {
   };
 
   if (req.file) {
-    const attachment = {
-      url: `/images/${req.file.filename}`,
-      originalName: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-    };
-    updatePayload.$push = { attachments: attachment };
+    try {
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        req.file.originalname,
+        "project-camp/attachments",
+      );
+      const attachment = {
+        url: result.secure_url,
+        publicId: result.public_id,
+        originalName: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+      };
+      updatePayload.$push = { attachments: attachment };
+    } catch (error) {
+      console.error("Cloudinary upload error:", error);
+      throw new ApiError(500, "Failed to upload attachment");
+    }
   }
 
   const updatedTask = await Task.findByIdAndUpdate(taskId, updatePayload, {
@@ -356,14 +386,26 @@ const deleteAttachment = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Attachment not found");
   }
 
-  // Try to delete file from disk
+  // Try to delete file from Cloudinary or disk
   try {
-    const filePath = path.join(process.cwd(), "public", attachment.url);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    if (attachment.publicId) {
+      // Cloudinary file - delete from Cloudinary
+      await deleteFromCloudinary(attachment.publicId);
+    } else if (attachment.url?.startsWith("/images/")) {
+      // Legacy local file - delete from disk
+      const filePath = path.join(process.cwd(), "public", attachment.url);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } else if (attachment.url?.includes("cloudinary.com")) {
+      // Cloudinary file without publicId stored - extract and delete
+      const publicId = getPublicIdFromUrl(attachment.url);
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
     }
   } catch (error) {
-    console.error("Error deleting file from disk:", error);
+    console.error("Error deleting file:", error);
     // Continue even if file deletion fails
   }
 

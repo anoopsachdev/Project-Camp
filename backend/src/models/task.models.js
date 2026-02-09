@@ -31,6 +31,8 @@ const taskSchema = new Schema(
       type: [
         {
           url: String,
+          publicId: String, // Cloudinary public_id for deletion
+          originalName: String, // Original filename for display
           mimetype: String,
           size: Number,
         },
