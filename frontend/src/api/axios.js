@@ -12,6 +12,11 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Prevent infinite loop: Don't retry if the failed request was already a refresh attempt
+    if (originalRequest.url?.includes("/auth/refresh-token")) {
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
