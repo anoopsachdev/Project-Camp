@@ -25,7 +25,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  const { email, username, password, role, fullName } = req.body;
 
   // validating we will check later
 
@@ -41,6 +41,7 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     username,
     password,
+    fullName,
   });
 
   const { unHashedToken, hashedToken, tokenExpiry } =

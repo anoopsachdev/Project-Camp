@@ -12,6 +12,7 @@ import {
 import api from "../api/axios";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
+import { CheckCircle, XCircle, Mail, RefreshCw } from "lucide-react";
 
 const UserSettings = () => {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ const UserSettings = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -44,6 +46,20 @@ const UserSettings = () => {
       toast.error(error.response?.data?.message || "Failed to change password");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+      await api.post("/auth/resend-email-verification");
+      toast.success("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to resend verification email",
+      );
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -83,10 +99,50 @@ const UserSettings = () => {
             </div>
             <div>
               <Label>Email</Label>
-              <p className="text-gray-900 font-medium mt-1">{user?.email}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-gray-900 font-medium">{user?.email}</p>
+                {user?.isEmailVerified ? (
+                  <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                    <CheckCircle className="h-3 w-3" />
+                    Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                    <XCircle className="h-3 w-3" />
+                    Not Verified
+                  </span>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Email Verification Card - Only show if not verified */}
+        {!user?.isEmailVerified && (
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-yellow-800">
+                <Mail className="h-5 w-5" />
+                Verify Your Email
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-yellow-700 mb-4">
+                Your email address is not verified. Please verify your email to
+                access all features.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleResendVerification}
+                isLoading={isResending}
+                className="bg-white"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Send Verification Email
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Change Password Card */}
         <Card>

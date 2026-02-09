@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../../api/axios"; // Direct API call for register since it's not in AuthContext usually, or we can add it.
+import api from "../../api/axios";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Label } from "../../components/ui/Label";
@@ -10,9 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/Card";
+import { Mail } from "lucide-react";
 
 import { toast } from "sonner";
-import { useAuth } from "../../context/AuthContext"; // Assuming useAuth is available
+import { useAuth } from "../../context/AuthContext";
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -25,6 +26,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,25 +39,59 @@ const RegisterPage = () => {
     setError("");
 
     try {
-      // Register
       await api.post("/auth/register", {
         ...formData,
-        role: "admin", // Defaulting to admin for simplicity as per verification script logic, or should we let user choose?
-        // PRD says: User Registration. Usually self-signup doesn't choose role unless it's a specific flow.
-        // The codebase verification script used 'admin' role. I'll default to admin for this "Camp" owner.
+        username: formData.username.toLowerCase(), // Backend requires lowercase username
+        role: "admin",
       });
 
-      // Auto login or redirect to login?
-      // The PRD says "Verification email has been sent".
-      // So we should show a success message.
-
-      navigate("/login?registered=true");
+      // Show success state instead of redirecting
+      setRegistrationSuccess(true);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Success State - Check Your Email
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-blue-600 text-3xl font-bold">
+              Project Camp
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <Mail className="h-8 w-8 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Check Your Email
+            </h3>
+            <p className="text-gray-600 text-center mb-4">
+              We've sent a verification link to{" "}
+              <span className="font-medium text-gray-900">
+                {formData.email}
+              </span>
+            </p>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Click the link in your email to verify your account and get
+              started.
+            </p>
+            <Link
+              to="/login"
+              className="text-blue-600 hover:underline text-sm font-medium"
+            >
+              Return to Login
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
