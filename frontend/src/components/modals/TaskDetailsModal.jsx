@@ -362,9 +362,12 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
                         }
 
                         // Prepend backend base URL if path is relative
+                        const backendUrl =
+                          import.meta.env.VITE_BACKEND_URL ||
+                          "http://localhost:8000";
                         const fileUrl = cleanUrl?.startsWith("http")
                           ? cleanUrl
-                          : `http://localhost:8000${cleanUrl}`;
+                          : `${backendUrl}${cleanUrl}`;
 
                         // Display name: use originalName if available, otherwise extract from URL
                         const displayName =
@@ -471,9 +474,12 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
                       }
 
                       // Prepend backend base URL if path is relative
+                      const backendUrl =
+                        import.meta.env.VITE_BACKEND_URL ||
+                        "http://localhost:8000";
                       const fileUrl = cleanUrl?.startsWith("http")
                         ? cleanUrl
-                        : `http://localhost:8000${cleanUrl}`;
+                        : `${backendUrl}${cleanUrl}`;
 
                       // Display name: use originalName if available, otherwise extract from URL
                       const displayName =
