@@ -86,16 +86,21 @@ const createTask = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Project not found");
   }
   const files = req.files || [];
+  console.log(`[Task Upload] Received ${files.length} file(s)`);
 
   // Upload files to Cloudinary
   const attachments = await Promise.all(
     files.map(async (file) => {
+      console.log(
+        `[Task Upload] Processing: ${file.originalname} (${file.size} bytes)`,
+      );
       try {
         const result = await uploadToCloudinary(
           file.buffer,
           file.originalname,
           "project-camp/attachments",
         );
+        console.log(`[Task Upload] Success: ${result.secure_url}`);
         return {
           url: result.secure_url,
           publicId: result.public_id,
@@ -104,7 +109,7 @@ const createTask = asyncHandler(async (req, res) => {
           size: file.size,
         };
       } catch (error) {
-        console.error("Cloudinary upload error:", error);
+        console.error("[Task Upload] Cloudinary error:", error);
         throw new ApiError(500, "Failed to upload attachment");
       }
     }),
@@ -246,11 +251,17 @@ const updateTask = asyncHandler(async (req, res) => {
   };
 
   if (req.file) {
+    console.log(
+      `[Task Update] File received: ${req.file.originalname} (${req.file.size} bytes)`,
+    );
     try {
       const result = await uploadToCloudinary(
         req.file.buffer,
         req.file.originalname,
         "project-camp/attachments",
+      );
+      console.log(
+        `[Task Update] Cloudinary upload success: ${result.secure_url}`,
       );
       const attachment = {
         url: result.secure_url,
@@ -261,9 +272,11 @@ const updateTask = asyncHandler(async (req, res) => {
       };
       updatePayload.$push = { attachments: attachment };
     } catch (error) {
-      console.error("Cloudinary upload error:", error);
+      console.error("[Task Update] Cloudinary error:", error);
       throw new ApiError(500, "Failed to upload attachment");
     }
+  } else {
+    console.log("[Task Update] No file received in request");
   }
 
   const updatedTask = await Task.findByIdAndUpdate(taskId, updatePayload, {

@@ -31,10 +31,7 @@ const CreateTaskModal = ({ isOpen, onClose, projectId: propProjectId }) => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (formData) =>
-      api.post(`/tasks/${projectId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      }),
+    mutationFn: (formData) => api.post(`/tasks/${projectId}`, formData),
     onSuccess: () => {
       queryClient.invalidateQueries(["tasks", projectId]);
       setTitle("");

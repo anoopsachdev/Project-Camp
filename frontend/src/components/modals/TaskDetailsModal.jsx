@@ -72,12 +72,8 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
     }
   }, [taskDetails]);
 
-  // Update Task Mutation
   const updateTaskMutation = useMutation({
-    mutationFn: (data) =>
-      api.put(`/tasks/${projectId}/t/${task._id}`, data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      }),
+    mutationFn: (data) => api.put(`/tasks/${projectId}/t/${task._id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(["tasks", projectId]);
       queryClient.invalidateQueries(["task", projectId, task._id]);
