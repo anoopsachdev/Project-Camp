@@ -29,7 +29,7 @@ export const uploadToCloudinary = async (
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: folder,
-        resource_type: "auto", // Automatically detect file type
+        resource_type: "raw", // Use 'raw' for non-image files (PDFs, docs, etc.)
         public_id: `${Date.now()}-${originalName.replace(/\.[^/.]+$/, "")}`, // Remove extension for public_id
       },
       (error, result) => {

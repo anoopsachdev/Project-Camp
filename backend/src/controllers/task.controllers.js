@@ -270,6 +270,10 @@ const updateTask = asyncHandler(async (req, res) => {
         mimetype: req.file.mimetype,
         size: req.file.size,
       };
+      console.log(
+        `[Task Update] Saving attachment to DB:`,
+        JSON.stringify(attachment, null, 2),
+      );
       updatePayload.$push = { attachments: attachment };
     } catch (error) {
       console.error("[Task Update] Cloudinary error:", error);

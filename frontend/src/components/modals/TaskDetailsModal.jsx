@@ -361,9 +361,20 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
                         const backendUrl =
                           import.meta.env.VITE_BACKEND_URL ||
                           "http://localhost:8000";
-                        const fileUrl = cleanUrl?.startsWith("http")
+                        let fileUrl = cleanUrl?.startsWith("http")
                           ? cleanUrl
                           : `${backendUrl}${cleanUrl}`;
+
+                        // For Cloudinary raw uploads, add fl_attachment flag to enable inline viewing
+                        if (
+                          fileUrl?.includes("cloudinary.com") &&
+                          fileUrl?.includes("/raw/upload/")
+                        ) {
+                          fileUrl = fileUrl.replace(
+                            "/upload/",
+                            "/upload/fl_attachment/",
+                          );
+                        }
 
                         // Display name: use originalName if available, otherwise extract from URL
                         const displayName =
@@ -473,9 +484,20 @@ const TaskDetailsModal = ({ isOpen, onClose, task, projectId }) => {
                       const backendUrl =
                         import.meta.env.VITE_BACKEND_URL ||
                         "http://localhost:8000";
-                      const fileUrl = cleanUrl?.startsWith("http")
+                      let fileUrl = cleanUrl?.startsWith("http")
                         ? cleanUrl
                         : `${backendUrl}${cleanUrl}`;
+
+                      // For Cloudinary raw uploads, add fl_attachment flag to enable inline viewing
+                      if (
+                        fileUrl?.includes("cloudinary.com") &&
+                        fileUrl?.includes("/raw/upload/")
+                      ) {
+                        fileUrl = fileUrl.replace(
+                          "/upload/",
+                          "/upload/fl_attachment/",
+                        );
+                      }
 
                       // Display name: use originalName if available, otherwise extract from URL
                       const displayName =
