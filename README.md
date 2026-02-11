@@ -127,11 +127,11 @@ The system implements a three-tier permission model (Admin, Project Admin, Membe
 
 ## 🧪 Testing Architecture
 
-This project is designed with **test automation** in mind, featuring comprehensive testing support for both backend and frontend components.
+This project is designed with **test automation** in mind, featuring comprehensive testing support for frontend components.
 
 ### Frontend Automation Support
 
-All interactive UI components are tagged with `data-testid` attributes to facilitate automated testing with frameworks like **Selenium** or **Cypress**.
+All interactive UI components are tagged with `data-testid` attributes to facilitate automated testing with frameworks like **Selenium**.
 
 **Example Test IDs:**
 
