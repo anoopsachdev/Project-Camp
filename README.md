@@ -48,7 +48,7 @@ The system implements a three-tier permission model (Admin, Project Admin, Membe
 
 ---
 
-## ✨ Features
+## <a id="features"></a>✨ Features
 
 ### 👤 User Management
 
@@ -94,7 +94,7 @@ The system implements a three-tier permission model (Admin, Project Admin, Membe
 
 ---
 
-## 🛠️ Tech Stack
+## <a id="tech-stack"></a>🛠️ Tech Stack
 
 ### Backend
 
@@ -125,7 +125,7 @@ The system implements a three-tier permission model (Admin, Project Admin, Membe
 
 ---
 
-## 🧪 Testing Architecture
+## <a id="testing"></a>🧪 Testing Architecture
 
 This project is designed with **test automation** in mind, featuring comprehensive testing support for frontend components.
 
@@ -153,7 +153,7 @@ driver.findElement(By.cssSelector('[data-testid="email-input"]'));
 
 ---
 
-## 📦 Installation
+## <a id="installation"></a>📦 Installation
 
 ### Prerequisites
 
