@@ -129,22 +129,6 @@ The system implements a three-tier permission model (Admin, Project Admin, Membe
 
 This project is designed with **test automation** in mind, featuring comprehensive testing support for both backend and frontend components.
 
-### Backend Verification
-
-The project includes an end-to-end API test script located at `scripts/verify_backend.js`. This script performs:
-
-- Authentication flow testing (register, login, logout)
-- CRUD operations on projects, tasks, and notes
-- Permission validation across different user roles
-- API response verification
-
-**Running Backend Tests:**
-
-```bash
-cd backend
-node scripts/verify_backend.js
-```
-
 ### Frontend Automation Support
 
 All interactive UI components are tagged with `data-testid` attributes to facilitate automated testing with frameworks like **Selenium** or **Cypress**.
